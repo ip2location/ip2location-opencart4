@@ -15,7 +15,7 @@ IP2Location IP Country Redirect allows users to specify patterns for web pages t
 
 ## Installation instructions
 
-1. Download the latest [release](https://github.com/ip2location/ip2location-opencart4/releases).
+1. Download the latest [release](https://github.com/ip2location/ip2location-opencart4/releases/tag/latest).
 2. Login to the OpenCart admin area.
 3. Go to Extensions > Installer and upload the **ip2location.ocmod.zip** file.
 4. Go to Extensions > Extensions > Modules > IP2Location IP Country Redirect to install and edit the settings.

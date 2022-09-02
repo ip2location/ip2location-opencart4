@@ -1,0 +1,498 @@
+{{ header }}{{ column_left }}
+
+<div id="content">
+	<div class="page-header">
+		<div class="container-fluid">
+			<div class="float-end">
+				<button type="submit" form="form-ip2location" data-bs-toggle="tooltip" data-bs-title="{{ button_save }}" class="btn btn-primary"><i class="fas fa-save"></i></button>
+				<a href="{{ back }}" data-bs-toggle="tooltip" data-bs-title="{{ button_back }}" class="btn btn-light"><i class="fas fa-reply"></i></a>
+			</div>
+
+			<h1>{{ heading_title }}</h1>
+
+			<ol class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ol>
+		</div>
+	</div>
+	<div class="container-fluid">
+		<div class="card">
+			<div class="card-body">
+				{% if settings_error %}
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fa fa-exclamation-circle"></i> {{ settings_error }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+				{% endif %}
+
+				{% if settings_success %}
+				<div class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fa fa-check-circle"></i> {{ settings_success }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+				{% endif %}
+
+				<form id="form-ip2location" action="{{ save }}" method="post" data-oc-toggle="ajax">
+					<div class="row mb-3">
+						<label for="checkbox-status" class="col-sm-2 col-form-label">{{ entry_status }}</label>
+						<div class="col-sm-10">
+							<div class="form-check form-switch form-switch-lg">
+								<input name="module_ip_country_redirect_status" value="1" class="form-check-input" type="checkbox" id="checkbox-status" {% if module_ip_country_redirect_status %}checked="checked" {% endif %}>
+							</div>
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="select-lookup-method" class="col-sm-2 col-form-label"><span data-bs-toggle="tooltip" data-bs-title="{{ help_method }}">{{ entry_method }}</span></label>
+
+						<div class="col-sm-10">
+							<select class="form-select" id="select-lookup-method" name="module_ip_country_redirect_lookup_method">
+								<option value="0"{% if module_ip_country_redirect_lookup_method == '0' %} selected{% endif %}>{{ text_local_binary_database }}</option>
+								<option value="1"{% if module_ip_country_redirect_lookup_method == '1' %} selected{% endif %}>{{ text_remote_api }}</option>
+							</select>
+						</div>
+					</div>
+					<div id="local-database" class="row mb-3{% if module_ip_country_redirect_lookup_method == '1' %} d-none{% endif %}">
+						<label for="input-database" class="col-sm-2 col-form-label"><span data-bs-toggle="tooltip" data-bs-title="{{ help_database_location }}">{{ entry_database_location }}</span></label>
+
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="module_ip_country_redirect_bin_path" id="input-database" value="{{ module_ip_country_redirect_bin_path }}" placeholder="{{ entry_database_location }}">
+							<p class="help-block mt-2">{{ entry_database_location_description }}</p>
+						</div>
+					</div>
+					<div id="remote-api" class="row mb-3{% if module_ip_country_redirect_lookup_method != '1' %} d-none{% endif %}">
+						<label for="input-api-key" class="col-sm-2 col-form-label"><span data-bs-toggle="tooltip" data-bs-title="{{ help_api_key }}">{{ entry_api_key }}</span></label>
+
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="module_ip_country_redirect_api_key" id="input-api-key" value="{{ module_ip_country_redirect_api_key }}" placeholder="{{ entry_api_key }}">
+							{% if ws_credit == '' %}
+							<p class="help-block mt-2">{{ entry_api_key_description }}</p>
+							{% else %}
+							<p class="help-block mt-2"><strong>{{ entry_remaining_credit }}</strong> {{ ws_credit }}</p>
+							{% endif %}
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div class="container-fluid mt-2">
+		<div class="card">
+			<div id="rules" class="card-header"><i class="fa fa-list"></i> {{ text_rules }}</div>
+			<div class="card-body loading-overlay-container">
+				<div class="row">
+					<div class="col-sm-12 mb-2">
+						<a data-bs-toggle="modal" data-bs-target="#add-rule-modal" class="btn btn-primary" data-update-url="{{ current_url }}"><i class="fa fa-plus-circle"></i> {{ text_new_rule }}</a>
+					</div>
+				</div>
+
+				{% if rules_success %}
+				<div class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fa fa-check-circle"></i> {{ rules_success }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+				{% endif %}
+
+				{% if edit_rules_error %}
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fa fa-check-circle"></i> {{ edit_rules_error }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+				{% endif %}
+
+				<div class="table-responsive">
+					<table class="table table-bordered table-hover">
+						<thead>
+							<tr>
+								<td class="text-left col-sm-2">{{ column_origin }}</td>
+								<td class="col-sm-3">
+									<a data-load="sort" href="{{ link_sort_from }}"{% if sort == 'from' %} class="{{ order|lower }}"{% endif %}>{{ column_from }}</a>
+								</td>
+								<td class="col-sm-3">
+									<a data-load="sort" href="{{ link_sort_to }}"{% if sort == 'to' %} class="{{ order|lower }}"{% endif %}>{{ column_to }}</a>
+								</td>
+								<td class="col-sm-1">
+									<a data-load="sort" href="{{ link_sort_code }}"{% if sort == 'code' %} class="{{ order|lower }}"{% endif %}>{{ column_code }}</a>
+								</td>
+								<td class="col-sm-1">
+									<a data-load="sort" href="{{ link_sort_status }}"{% if sort == 'status' %} class="{{ order|lower }}"{% endif %}>{{ column_status }}</a>
+								</td>
+								<td class="text-right col-sm-2"></td>
+							</tr>
+						</thead>
+						<tbody>
+							{% if rules	%}
+							{% for rule in rules %}
+							<tr>
+								<td>
+									<span data-preview="origins" data-rule-id="{{ rule.id }}" style="display:block;overflow:auto;max-height:60px">{{ rule.show_origin }}</span>
+									<select class="form-select d-none" data-input="origins" data-rule-id="{{ rule.id }}" multiple data-placeholder="{{ entry_origin }}">
+										{% for origin in origins %}
+										<option value="{{ origin.code }}"{% if origin.code in rule.origins %} selected{% endif %}>{{ origin.text }}</option>
+										{% endfor %}
+									</select>
+								</td>
+								<td>
+									<span data-preview="from" data-rule-id="{{ rule.id }}">
+									{% if rule.condition == '0' %}
+									<span class="label label-success">
+									{% elseif rule.condition == '1' %}
+									<span class="label label-info">
+									{% else %}
+									<span class="label label-danger">
+									{% endif %}
+
+										{% if rule.condition == '0' %}
+											{{ text_equals_to }}
+										{% elseif rule.condition == '1' %}
+											{{ text_begins_with }}
+										{% else %}
+											{{ text_regular_expression }}
+										{% endif %}
+									</span>
+									<br />
+									{{ rule.show_from }}
+									</span>
+									<div class="row">
+										<div class="col-sm-3" style="margin-right:0;padding-right:0">
+											<select class="form-select d-none" data-input="condition" data-rule-id="{{ rule.id }}">
+												<option value="0"{% if rule.condition == '0' %} selected{% endif %}>{{ text_equals_to }}</option>
+												<option value="1"{% if rule.condition == '1' %} selected{% endif %}>{{ text_begins_with }}</option>
+												<option value="2"{% if rule.condition == '2' %} selected{% endif %}>{{ text_regular_expression }}</option>
+											</select>
+										</div>
+										<div class="col-sm-9" style="margin-left:0;padding-left:2px">
+											<input type="hidden" data-input="from" data-rule-id="{{ rule.id }}" value="{{ rule.from }}" class="form-control" placeholder="{{ entry_from }}">
+										</div>
+									</div>
+								</td>
+								<td>
+									<span data-preview="to" data-rule-id="{{ rule.id }}">{{ rule.show_to }}</span>
+									<input type="hidden" data-input="to" data-rule-id="{{ rule.id }}" value="{{ rule.to }}" class="form-control" placeholder="{{ entry_to }}"{% if rule.code == '404' %} disabled{% endif %} />
+								</td>
+								<td>
+									<span data-preview="code" data-rule-id="{{ rule.id }}">{{ rule.code }}</span>
+									<select class="form-select d-none" data-input="code" data-rule-id="{{ rule.id }}">
+										{% for code in codes %}
+										<option value="{{ code.code }}"{% if code.code == rule.code %} selected{% endif %}>{{ code.text }}</option>
+										{% endfor %}
+									</select>
+								</td>
+								<td>
+									<span data-preview="status" data-rule-id="{{ rule.id }}">
+										{% if rule.status %}
+										{{ text_enabled }}
+										{% else %}
+										{{ text_disabled }}
+										{% endif %}
+									</span>
+									<select class="form-select d-none" data-input="status" data-rule-id="{{ rule.id }}">
+										<option value="1"{% if rule.status %} selected{% endif %}>{{ text_enabled }}</option>
+										<option value="0"{% if rule.status == false %} selected{% endif %}>{{ text_disabled }}</option>
+									</select>
+								</td>
+								<td class="text-right">
+									<a data-button="edit" data-rule-id="{{ rule.id }}" data-bs-toggle="tooltip" data-bs-title="{{ button_edit }}" class="btn btn-primary"><i class="fa fa-pencil"></i></a>
+									<a data-button="save" data-rule-id="{{ rule.id }}" data-bs-toggle="tooltip" data-bs-title="{{ button_save }}" class="btn btn-success d-none"><i class="fa fa-save"></i></a>
+									<a data-button="cancel" data-rule-id="{{ rule.id }}" data-bs-toggle="tooltip" data-bs-title="{{ button_cancel }}" class="btn btn-warning d-none"><i class="fa fa-reply"></i></a>
+									<a data-button="delete" data-rule-id="{{ rule.id }}" data-bs-toggle="tooltip" data-bs-title="{{ button_delete }}" class="btn btn-danger"><i class="fa fa-trash"></i></a>
+								</td>
+							</tr>
+							{% endfor %}
+							{% else %}
+							<tr>
+								<td class="text-center" colspan="5">{{ text_no_results }}</td>
+							</tr>
+							{% endif %}
+						</tbody>
+					</table>
+				</div>
+				<div class="row">
+					<div class="col-sm-6 text-left">{% if pagination %}{{ pagination }}{% endif %}</div>
+					<div class="col-sm-6 text-right">{% if results %}{{ results }}{% endif %}</div>
+				</div>
+				<div class="loading-overlay d-none" id="loading-overlay">
+					<i class="fa fa-circle-o-notch fa-spin"></i> {{ text_loading }}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="container-fluid mt-2">
+		<div class="card">
+			<div class="card-header"><i class="fa fa-location-arrow"></i> {{ text_lookup }}</div>
+			<div class="card-body">
+				{% if lookup_error %}
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fa fa-exclamation-circle"></i> {{ lookup_error }}
+				</div>
+				{% endif %}
+
+				{% if lookup_result %}
+				<div class="alert alert-info alert-dismissible fade show" role="alert">
+					<i class="fa fa-info-circle"></i> {{ lookup_result }}
+				</div>
+				{% endif %}
+
+				<form class="form-horizontal" method="post" action="{{ ajax_lookup }}" id="lookup-form" data-oc-toggle="ajax">
+					<div class="row mb-3">
+						<label for="input-ip-address" class="col-sm-2 col-form-label">{{ entry_ip_address }}</label>
+
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="ipAddress" id="input-ip-address" value="{{ ipAddress }}" placeholder="{{ entry_ip_address }}"{% if lookup_enabled == false %} disabled{% endif %}>
+						</div>
+					</div>
+
+					<div class="row mb-3">
+						<label class="col-sm-2 col-form-label"></label>
+
+						<div class="col-sm-10">
+							<button data-bs-title="{{ button_lookup }}" class="btn btn-primary{% if lookup_enabled == false %} disabled{% endif %}"><i class="fa fa-search"></i> {{ button_lookup }}</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="add-rule-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form class="form-horizontal" method="post" action="{{ action}}" id="add-rule-form">
+				<div class="modal-header">
+					<h5 class="modal-title" id="staticBackdropLabel">{{ text_add_rule }}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					{% if rules_error %}
+					<div class="alert alert-danger alert-dismissible fade show" role="alert">
+						<i class="fa fa-exclamation-circle"></i> {{ rules_error }}
+						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+					</div>
+					{% endif %}
+					<div class="mb-3">
+						<label class="form-label" for="add-rule-from"><span data-bs-toggle="tooltip" data-bs-title="{{ help_origin }}">{{ entry_origin }}</span></label>
+						<select class="form-select" id="add-origin" name="newOrigins[]" multiple style="width:100%" data-placeholder="{{ entry_origin }}">
+							{% for origin in origins %}
+							<option value="{{ origin.code }}"{% if origin.code in new_origins %} selected{% endif %}>{{ origin.text }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="add-rule-from"><span data-bs-toggle="tooltip" data-bs-title="{{ help_from }}">{{ entry_from }}</span></label>
+						<div class="row">
+							<div class="col-sm-3">
+								<select class="form-select" id="add-from-condition" name="newCondition">
+									<option value="0"{% if new_condition == '0' %} selected{% endif %}>{{ text_equals_to }}</option>
+									<option value="1"{% if new_condition == '1' %} selected{% endif %}>{{ text_begins_with }}</option>
+									<option value="2"{% if new_condition == '2' %} selected{% endif %}>{{ text_regular_expression }}</option>
+								</select>
+							</div>
+							<div class="col-sm-9">
+								<input type="text" class="form-control" name="newFrom" id="add-rule-from" value="{{ new_from }}" placeholder="{{ entry_from }}">
+							</div>
+						</div>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="add-rule-to"><span data-bs-toggle="tooltip" data-bs-title="{{ help_to }}">{{ entry_to }}</span></label>
+						<input type="text" class="form-control" name="newTo" id="add-rule-to" value="{{ new_to }}" placeholder="{{ entry_to }}">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="add-rule-code"><span data-bs-toggle="tooltip" data-bs-title="{{ help_code }}">{{ entry_code }}</span></label>
+						<select class="form-control" id="add-rule-code" name="newCode">
+							{% for code in codes %}
+							<option value="{{ code.code }}"{% if new_code == code.code %} selected{% endif %}>{{ code.text }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="add-rule-status">{{ entry_status }}</label>
+						<select class="form-select" id="add-rule-status" name="newStatus">
+							<option value="1"{% if new_status == '1' %} selected{% endif %}>{{ text_enabled }}</option>
+							<option value="0"{% if new_status == '0' %} selected{% endif %}>{{ text_disabled }}</option>
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ button_cancel }}</button>
+					<button type="submit" class="btn btn-primary">{{ button_create }}</button>
+				</div>
+
+				<input type="hidden" name="newRule" value="true">
+			</form>
+		</div>
+	</div>
+</div>
+
+<style>
+	.form-switch .form-check-input {
+		cursor: pointer;
+	}
+
+	.form-switch .form-check-input:checked {
+		background-color: #32cd32;
+		border-color: #32cd32;
+	}
+</style>
+
+<script>
+	jQuery(function($) {
+		{{ scripts }}
+	});
+
+	(function() {
+		jQuery(function($) {
+			$('#add-rule-code').on('change', function() {
+				($(this).val() == 404) ? $('#add-rule-to').prop('disabled', true).val('') : $('#add-rule-to').prop('disabled', false);
+			});
+
+			$('#add-rule-modal').on('shown.bs.modal', function(){
+				$('#add-rule-from').on('input', function(e){
+					$(this).val($(this).val().replace(/^\//g, ''));
+				});
+
+				$('#add-origin').chosen({ width: '100%' }).on('change', function(){
+					if (Array.isArray($(this).val())) {
+						var origins = $(this).val();
+						var countries = [];
+
+						for (var origin in origins) {
+							if (origins[origin] == '*-*') {
+								$(this).val(['*-*']);
+								$(this).trigger('chosen:updated');
+								break;
+							}
+
+							if (origins[origin].substr(-1) == '*') {
+								countries.push(origins[origin].substr(0, 2));
+							}
+						}
+
+						if (countries.length > 0) {
+							for (var country in countries) {
+								for (var origin in origins) {
+									if (origins[origin].substr(0, 2) == countries[country] && origins[origin].substr(-1) != '*') {
+										delete origins[origin];
+									}
+								}
+							}
+
+							$(this).val(origins);
+							$(this).trigger('chosen:updated');
+						}
+					}
+				});
+			}).on('hidden.bs.modal', function(){
+				$('#add-rule-from').off('input');
+				$('#add-origin').chosen('destroy');
+			});
+
+			$('#select-lookup-method').on('change', function(){
+				if($(this).val() == 0){
+					$('#local-database').removeClass('d-none');
+					$('#remote-api').addClass('d-none');
+				}
+				else{
+					$('#local-database').addClass('d-none');
+					$('#remote-api').removeClass('d-none');
+				}
+			});
+
+			$('a[data-button="edit"]').on('click', function(e) {
+				e.preventDefault();
+
+				var $row = $(this).parent().parent();
+
+				$row.find('span[data-preview="origins"], span[data-preview="from"], span[data-preview="to"], span[data-preview="code"], span[data-preview="status"], a[data-button="edit"], a[data-button="delete"]').addClass('d-none');
+				$row.find('select[data-input="origins"], select[data-input="condition"], select[data-input="code"], select[data-input="status"], a[data-button="save"], a[data-button="cancel"]').removeClass('d-none');
+				$row.find('input[type="hidden"]').attr('type', 'text');
+				$row.find('select[data-input="origins"]').chosen({ width: '100%' }).on('change', function(){
+					if (Array.isArray($(this).val())) {
+						var origins = $(this).val();
+						var countries = [];
+
+						for (var origin in origins) {
+							if (origins[origin] == '*-*') {
+								$(this).val(['*-*']);
+								$(this).trigger('chosen:updated');
+								break;
+							}
+
+							if (origins[origin].substr(-1) == '*') {
+								countries.push(origins[origin].substr(0, 2));
+							}
+						}
+
+						if (countries.length > 0) {
+							for (var country in countries) {
+								for (var origin in origins) {
+									if (origins[origin].substr(0, 2) == countries[country] && origins[origin].substr(-1) != '*') {
+										delete origins[origin];
+									}
+								}
+							}
+
+							$(this).val(origins);
+							$(this).trigger('chosen:updated');
+						}
+					}
+				});
+
+				$row.find('select[data-input="code"]').off('change').on('change', function() {
+					if ($(this).val() == '404') {
+						$row.find('input[data-input="to"]').val('').prop('disabled', true);
+					} else {
+						$row.find('input[data-input="to"]').prop('disabled', false);
+					}
+				});
+
+				$row.find('select, input').each(function(i, obj) {
+					$(obj).attr('data-initial-values', $(obj).val());
+				});
+
+				$row.find('a[data-button="save"]').off('click').on('click', function(e) {
+					var $form = $('<form method="post" />').html('' +
+					'<input type="hidden" name="ruleId" value="' + $(this).attr('data-rule-id') + '">' +
+					'<input type="hidden" name="origins" value="' + $row.find('select[data-input="origins"]').val() + '">' +
+					'<input type="hidden" name="mode" value="' + $row.find('select[data-input="condition"]').val() + '">' +
+					'<input type="hidden" name="from" value="' + $row.find('input[data-input="from"]').val() + '">' +
+					'<input type="hidden" name="to" value="' + $row.find('input[data-input="to"]').val() + '">' +
+					'<input type="hidden" name="code" value="' + $row.find('select[data-input="code"]').val() + '">' +
+					'<input type="hidden" name="status" value="' + $row.find('select[data-input="status"]').val() + '">' +
+					'');
+
+					$('body').append($form);
+					$form.submit();
+				});
+
+				$row.find('a[data-button="cancel"]').off('click').on('click', function(e) {
+					e.preventDefault();
+
+					$row.find('select, input').each(function(i, obj) {
+						$(obj).val($(obj).attr('data-initial-values'));
+						$(obj).attr('data-initial-values', '');
+					});
+
+					$row.find('span[data-preview="origins"], span[data-preview="from"], span[data-preview="to"], span[data-preview="code"], span[data-preview="status"], a[data-button="edit"], a[data-button="delete"]').removeClass('d-none');
+					$row.find('select[data-input="origins"], select[data-input="condition"], select[data-input="code"], select[data-input="status"], a[data-button="save"], a[data-button="cancel"]').addClass('d-none');
+					$row.find('input[type="text"]').attr('type', 'hidden');
+					$row.find('select[data-input="origins"]').chosen('destroy');
+				});
+			});
+
+			$('a[data-button="delete"]').on('click', function(e) {
+				e.preventDefault();
+
+				if (confirm('Confirm to delete this rule?')) {
+					var $form = $('<form method="post" />').html('<input type="hidden" name="deleteId" value="' + $(this).attr('data-rule-id') + '">');
+					$('body').append($form);
+					$form.submit();
+				}
+			});
+		});
+	}).call(this);
+</script>
+{{ footer }}
